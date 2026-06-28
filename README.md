@@ -60,6 +60,3 @@ sbatch run_analysis.job
 
 ---
 
-Notes
-- The repository's interactive notebook is the recommended starting point for understanding the pipeline and for experimenting with smaller subsets before scaling up to the full dataset on a cluster.
-- If you prefer, I can (1) create a canonical README.md (instead
