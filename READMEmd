@@ -1,73 +1,65 @@
-# The LLAMA of WallStreet: LLM data extraction and sentiment analysis
+## What this is
 
-You have just been hired as a data scientists at a new company.
-Your boss wants to create a sentiment analysis pipeline for Reddit posts: his goal is to analyze reddit comments to find useful insights about stocks to be bought or sold.
-In particular, he wants a dataset with the `ticker` (or stock symbol: AAPL for Apple, TSLA for Tesla etc...) of the company and the general sentiment (In 5 levels) towards that ticker.
+A small project that demonstrates extracting stock tickers and computing sentiment from Reddit comments using an LLM‑powered pipeline. It includes a runnable Jupyter notebook that walks through the data‑loading, LLM extraction, sentiment mapping, basic daily aggregation and visualizations, plus a lightweight Python script intended to be submitted as a SLURM job on Leonardo.
 
-Moreover, he wants to be able to analyze comments every night using Leonardo and `SLURM`, **BUT**, unfortunately, he does not know how to write or execute code.
-He only wants to send prompt in natural english.
+### Stack
+- **Language(s):** Jupyter Notebook (primary), Python (scripts), Shell (SLURM job files)
+- **Framework / runtime:** Python 3.x, JupyterLab / Jupyter Notebook
+- **Notable libraries:** pandas, langchain (langchain_openai), transformers / huggingface, ChatOpenAI wrapper, matplotlib / seaborn
 
-In the pipeline you have to:
-
-1. Remove non relevant comments (i.e. comments not about companies);
-2. Associate a ticker to each comment talking about companies quotated in a stock exchange;
-3. Add a sentiment score to each comment
-4. Save the new data on disk
-5. Visualize some results
-6. _Design_ an agent capable of checking jobs and sending directives to launch your script on Leonardo
-   - Which **tools** should it have available?
-   - How would you write the **system prompt**?
-7. (optional) Write the actual agent implementation
-
-## STEP 1: Configuring the environment
-
-The first step is to clone the repository in a directory of your choice.
-First, connect to Leonardo and `cd` to the directory you want.
-Then you just need to run the following command:
-
-```bash
-git clone https://gitlab.hpc.cineca.it/rmioli00/hpc_bbs_26.git
+## How it's organized
+```
+README (this file)         - repository overview and how-to
+student_notebook_LLM.ipynb - interactive notebook that implements and documents the pipeline
+student_job_LLM.py         - standalone Python script intended for batch execution (SLURM)
+reddit_comments.csv        - raw Reddit comments dataset (large CSV)
+sentiment_analysis.csv     - sample/exported results produced by the notebook
+requirements.txt           - pinned Python dependencies used by the notebook/script
+config/                    - environment and job templates (SLURM / setup scripts)
 ```
 
-or in general, with any git repository:
+How it fits together: the Jupyter notebook (student_notebook_LLM.ipynb) is the primary entry point for exploration and development: it loads reddit_comments.csv, demonstrates using a structured LLM prompt to extract ticker symbols and a 5‑level sentiment label, maps sentiment labels to numeric scores, shows simple daily aggregations for tickers, and produces plots. The script student_job_LLM.py contains a near‑identical pipeline implemented for batch execution on a cluster and is intended to be wrapped in a SLURM job file for nightly or scheduled processing.
 
-```bash
-git clone <repo_https_url>`
+## How to run it
+Shortest path from a fresh clone to running the notebook locally (or on Leonardo's Jupyter environment):
+
+1. Create and activate a Python environment and install requirements:
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-If you have already cloned the repository previously in your working directory, you can `cd` into it and download the updates with:
-
-```bash
-cd path/to/hpc_bbs_26
+2. Start JupyterLab / Notebook and open the notebook:
+```
+jupyter lab  # or: jupyter notebook
+# then open student_notebook_LLM.ipynb from the browser
 ```
 
-and then:
+3. Notebook notes and runtime configuration:
+- The notebook uses a local LLM endpoint by default (VLLM endpoint at http://127.0.0.1:8000/v1) and an API key placeholder. If you run a model locally (VLLM / Mistral), update MODEL_NAME, VLLM_ENDPOINT and API_KEY variables in the notebook before calling the LLM cells.
+- For quick tests, change the LIMIT variable in the notebook to process a small subset instead of the full ~100k comments.
 
-```bash
-git pull
+4. Running the batch script on a SLURM cluster (Leonardo):
+- The file student_job_LLM.py is written to run as a headless script and will save results to sentiment_analysis_results.csv.
+- Create an sbatch script (example shown in the notebook under Agent Architecture), then submit with:
 ```
-
-After you cloned and updated the repository, `cd` into the newly created directory and run the `venv` configuration script.
-
-The script `config/1_configure_environment.sh` will create e virtualenv for you, and it will download the llm.
-To start the script, you simply need to run the following command:
-
-```bash
-bash config/1_configure_environment.sh
+sbatch run_analysis.job
 ```
+- Monitor with squeue and read the .out/.err captured by SLURM when the job finishes.
 
-The dependencies installed into this virtualenv are specified in the `requirements.txt` file.
-You can add more libraries in that file, or you can install them after the environment creation.
-To install additional libraries by hand, you simply need to issue the command: `pip3 install <lib_name>==<version>`.
+## What to look at first
+- Open student_notebook_LLM.ipynb to see an executable walkthrough of the extraction, sentiment mapping and plotting. The notebook contains: data loading, a structured LLM prompt (StockComment pydantic model), parallelized LLM inference with ThreadPoolExecutor, result saving, daily aggregation and plotting examples.
+- student_job_LLM.py shows how the same pipeline can be executed in batch mode and saved to CSV for downstream agents or schedulers.
+- requirements.txt contains the pinned dependencies used for the environment; installing these will reproduce the notebook environment.
 
-## STEP 2: Starting the programming environment
+## Try asking
+- "How do I change the notebook to use OpenAI or a different LLM endpoint instead of the local VLLM?"
+- "Can you add an example sbatch file and a small wrapper script that the agent can use to submit student_job_LLM.py to SLURM?"
+- "What value should I set for LIMIT in the notebook to test the pipeline quickly on a laptop (e.g., <=1000)?"
 
-The script `config/LLM_start_jupyter.job` will start a jupyter environment with an llm already loaded.
+---
 
-You can use the jupyter environment on your browser by opening an ssh tunnel from your pc to the worker node.
-Just copy-paste in a terminal the instructions you see printed in the `.out` file when you start the job.
-
-To start the jupyter server, simply run `sbatch config/LLM_start_jupyter.job`.
-You can see when your environment will be provisioned by running the `squeue --me -i 5` command.
-When you see your job is running, press control-c and start the ssh tunnel on a terminal on your pc.
-**DO NOT START AN SSH TUNNEL ON A LEONARDO TERMINAL, PAY ATTENTION TO THIS**.
+Notes
+- The repository's interactive notebook is the recommended starting point for understanding the pipeline and for experimenting with smaller subsets before scaling up to the full dataset on a cluster.
+- If you prefer, I can (1) create a canonical README.md (instead of this README filename) or (2) add a short example sbatch file and a small agent wrapper that automates submission and monitoring on Leonardo. Tell me which you prefer and I will make the change.
