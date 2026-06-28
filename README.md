@@ -9,13 +9,13 @@ A small project that demonstrates extracting stock tickers and computing sentime
 
 ## How it's organized
 ```
-README (this file)         - repository overview and how-to
-student_notebook_LLM.ipynb - interactive notebook that implements and documents the pipeline
-student_job_LLM.py         - standalone Python script intended for batch execution (SLURM)
-reddit_comments.csv        - raw Reddit comments dataset (large CSV)
-sentiment_analysis.csv     - sample/exported results produced by the notebook
-requirements.txt           - pinned Python dependencies used by the notebook/script
-config/                    - environment and job templates (SLURM / setup scripts)
+- README (this file)         - repository overview and how-to
+- student_notebook_LLM.ipynb - interactive notebook that implements and documents the pipeline--
+- student_job_LLM.py         - standalone Python script intended for batch execution (SLURM)
+- reddit_comments.csv        - raw Reddit comments dataset (large CSV)
+- sentiment_analysis.csv     - sample/exported results produced by the notebook
+- requirements.txt           - pinned Python dependencies used by the notebook/script
+- config/                    - environment and job templates (SLURM / setup scripts)
 ```
 
 How it fits together: the Jupyter notebook (student_notebook_LLM.ipynb) is the primary entry point for exploration and development: it loads reddit_comments.csv, demonstrates using a structured LLM prompt to extract ticker symbols and a 5‑level sentiment label, maps sentiment labels to numeric scores, shows simple daily aggregations for tickers, and produces plots. The script student_job_LLM.py contains a near‑identical pipeline implemented for batch execution on a cluster and is intended to be wrapped in a SLURM job file for nightly or scheduled processing.
